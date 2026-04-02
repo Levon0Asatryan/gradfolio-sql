@@ -20,15 +20,22 @@ CREATE TABLE users (
   headline    VARCHAR(500) NOT NULL DEFAULT '',
   location    VARCHAR(255) NULL,
   verified    TINYINT(1)   NOT NULL DEFAULT 0,
+  is_public   TINYINT(1)   NOT NULL DEFAULT 1,
   email       VARCHAR(255) NULL,
   avatar_url  TEXT         NOT NULL DEFAULT '',
+  bio         TEXT         NULL,
   github      VARCHAR(500) NULL,
   linkedin    VARCHAR(500) NULL,
+  twitter     VARCHAR(500) NULL,
+  website     VARCHAR(500) NULL,
+  phone       VARCHAR(50)  NULL,
+  birthday    DATE         NULL,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_auth0 (auth0_id),
-  INDEX idx_users_email (email)
+  INDEX idx_users_email (email),
+  FULLTEXT INDEX ft_users_search (name, headline)
 );
 
 -- ============================================================
@@ -104,6 +111,7 @@ CREATE TABLE user_skills (
   sort_order INT          NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   INDEX idx_user_skills_user (user_id),
+  INDEX idx_user_skills_name (skill_name),
   CONSTRAINT fk_user_skills_user
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
@@ -126,6 +134,7 @@ CREATE TABLE projects (
   href             TEXT         NULL,
   category         ENUM('academic','personal','research','hackathon','course','other') NOT NULL DEFAULT 'other',
   status           ENUM('ongoing','completed','archived') NOT NULL DEFAULT 'ongoing',
+  is_public        TINYINT(1)   NOT NULL DEFAULT 1,
   tags             JSON         NULL, -- string[]
   technologies     JSON         NULL, -- string[]
   links            JSON         NULL, -- { label, url }[]
@@ -170,6 +179,31 @@ CREATE TABLE project_attachments (
 );
 
 -- ============================================================
+-- PROJECT TEAM MEMBERS
+-- tracks collaborators on a project; teammates must accept
+-- ============================================================
+
+CREATE TABLE project_team_members (
+  id          VARCHAR(36)  NOT NULL DEFAULT (UUID()),
+  project_id  VARCHAR(36)  NOT NULL,
+  user_id     VARCHAR(36)  NULL,
+  name        VARCHAR(255) NOT NULL,
+  role        VARCHAR(255) NULL,
+  avatar_url  TEXT         NULL,
+  status      ENUM('pending','accepted','rejected') NOT NULL DEFAULT 'pending',
+  sort_order  INT          NOT NULL DEFAULT 0,
+  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX idx_team_project (project_id),
+  INDEX idx_team_user (user_id),
+  UNIQUE KEY uq_team_project_user (project_id, user_id),
+  CONSTRAINT fk_team_project
+    FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+  CONSTRAINT fk_team_user
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+);
+
+-- ============================================================
 -- INTEGRATIONS
 -- ============================================================
 
@@ -178,6 +212,10 @@ CREATE TABLE integrations (
   user_id          VARCHAR(36)  NOT NULL,
   integration_type ENUM('linkedin','github') NOT NULL,
   status           ENUM('connected','not_connected') NOT NULL DEFAULT 'not_connected',
+  access_token     TEXT         NULL,
+  refresh_token    TEXT         NULL,
+  token_expires_at DATETIME     NULL,
+  external_user_id VARCHAR(255) NULL,
   last_synced_at   DATETIME     NULL,
   created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -203,5 +241,30 @@ CREATE TABLE activities (
   INDEX idx_activities_user (user_id),
   INDEX idx_activities_timestamp (timestamp),
   CONSTRAINT fk_activities_user
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- NOTIFICATIONS
+-- ============================================================
+
+CREATE TABLE notifications (
+  id              VARCHAR(36)  NOT NULL DEFAULT (UUID()),
+  user_id         VARCHAR(36)  NOT NULL,
+  type            ENUM('team_invite','team_accepted','team_rejected',
+                       'project_verified','comment','contact_request',
+                       'general') NOT NULL,
+  title           VARCHAR(500) NOT NULL,
+  message         TEXT         NULL,
+  is_read         TINYINT(1)   NOT NULL DEFAULT 0,
+  reference_id    VARCHAR(36)  NULL,
+  reference_type  VARCHAR(50)  NULL,
+  link            TEXT         NULL,
+  created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX idx_notifications_user (user_id),
+  INDEX idx_notifications_user_unread (user_id, is_read),
+  INDEX idx_notifications_created (created_at),
+  CONSTRAINT fk_notifications_user
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
