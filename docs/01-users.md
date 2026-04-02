@@ -19,7 +19,7 @@ Stores core user accounts and profile data. Every registered user has exactly on
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID v4. Used as the route parameter in `/profile/{id}` and as the foreign key target for all child tables. `VARCHAR(36)` because MySQL UUID() returns a 36-character hyphenated string (e.g., `550e8400-e29b-41d4-a716-446655440000`). |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Used as the route parameter in `/profile/{id}` and as the foreign key target for all child tables. |
 | `auth0_id` | `VARCHAR(255)` | NO | — | The unique user identifier from Auth0 (e.g., `auth0\|abc123` or `google-oauth2\|12345`). Used to match Auth0 session to our user record on login. `VARCHAR(255)` because Auth0 IDs vary in length by provider but are always under 255 chars. Has a UNIQUE constraint — one Auth0 identity per user. |
 | `name` | `VARCHAR(255)` | NO | — | User's full display name (e.g., "Levon Petrosyan"). Shown on profile header, search results, dashboard. Pre-filled from OAuth provider during registration. Maps to `ProfileData.name`. |
 | `headline` | `VARCHAR(500)` | NO | `''` | Professional headline (e.g., "Computer Science Undergraduate at NPUA — Aspiring Data Scientist"). Shown below name on profile. 500 chars allows a descriptive one-liner. Defaults to empty string so it's never NULL. Maps to `ProfileData.headline`. |
@@ -27,7 +27,7 @@ Stores core user accounts and profile data. Every registered user has exactly on
 | `verified` | `TINYINT(1)` | NO | `0` | Whether the profile has been verified (email confirmed + linked accounts + verified education/certs). `0` = not verified, `1` = verified. Used to show verification badge on profile. Maps to `ProfileData.verified`. |
 | `is_public` | `TINYINT(1)` | NO | `1` | Whether the profile appears in search results and the user directory. `1` = public (default — spec says profiles are public by default since the aim is showcasing), `0` = private (only accessible via direct link). Used by search/explore API to filter results. |
 | `email` | `VARCHAR(255)` | YES | `NULL` | Contact email address. May differ from the Auth0 login email. Shown on profile for contact purposes. Nullable because user may choose not to display it. Has a non-unique index for lookup. Maps to `ProfileData.email`. |
-| `avatar_url` | `TEXT` | NO | `''` | URL to the user's profile photo. Can be an external URL (from OAuth provider) or an uploaded file URL. `TEXT` because URLs can be arbitrarily long. Defaults to empty string — frontend shows a fallback avatar. Maps to `ProfileData.avatarUrl`. |
+| `avatar_url` | `TEXT` | YES | `NULL` | URL to the user's profile photo. Can be an external URL (from OAuth provider) or an uploaded file URL. `TEXT` because URLs can be arbitrarily long. NULL when not set — frontend shows a fallback avatar. Maps to `ProfileData.avatarUrl`. |
 | `bio` | `TEXT` | YES | `NULL` | Short biographical text. Spec says "optional short bio" at registration. Displayed on dashboard header. `TEXT` because there's no meaningful length constraint — users write a sentence or a paragraph. Maps to `DashboardHeaderUser.bio`. |
 | `github` | `VARCHAR(500)` | YES | `NULL` | GitHub profile URL (e.g., `https://github.com/username`). Collected during onboarding or from OAuth. Displayed as social link on profile. 500 chars covers any URL. Maps to `ProfileData.socialLinks.github`. |
 | `linkedin` | `VARCHAR(500)` | YES | `NULL` | LinkedIn profile URL. Same rationale as `github`. Maps to `ProfileData.socialLinks.linkedin`. |
@@ -51,7 +51,7 @@ Stores core user accounts and profile data. Every registered user has exactly on
 
 ```json
 {
-  "id": "u_001",
+  "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
   "auth0_id": "google-oauth2|117364529384756",
   "name": "Gabe Nuels",
   "headline": "Full-Stack Developer & CS Student at NPUA",
@@ -59,7 +59,7 @@ Stores core user accounts and profile data. Every registered user has exactly on
   "verified": 1,
   "is_public": 1,
   "email": "gabe.nuels@example.com",
-  "avatar_url": "https://i.pravatar.cc/150?u=u_001",
+  "avatar_url": "https://i.pravatar.cc/150?u=f47ac10b",
   "bio": "Passionate about building web applications and exploring AI.",
   "github": "https://github.com/gabenuels",
   "linkedin": "https://linkedin.com/in/gabenuels",

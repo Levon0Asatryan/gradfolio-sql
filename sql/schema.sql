@@ -1,6 +1,8 @@
 -- ============================================================
 -- Gradfolio Database Schema
 -- MySQL 8.4+
+-- All PKs use CHAR(36) with GENERATED ALWAYS to enforce
+-- auto-generated UUIDs — inserts must omit the id column.
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS gradfolio
@@ -14,7 +16,7 @@ USE gradfolio;
 -- ============================================================
 
 CREATE TABLE users (
-  id          VARCHAR(36)  NOT NULL DEFAULT (UUID()),
+  id          CHAR(36)     NOT NULL DEFAULT (UUID()),
   auth0_id    VARCHAR(255) NOT NULL,
   name        VARCHAR(255) NOT NULL,
   headline    VARCHAR(500) NOT NULL DEFAULT '',
@@ -22,7 +24,7 @@ CREATE TABLE users (
   verified    TINYINT(1)   NOT NULL DEFAULT 0,
   is_public   TINYINT(1)   NOT NULL DEFAULT 1,
   email       VARCHAR(255) NULL,
-  avatar_url  TEXT         NOT NULL DEFAULT '',
+  avatar_url  TEXT         NULL,
   bio         TEXT         NULL,
   github      VARCHAR(500) NULL,
   linkedin    VARCHAR(500) NULL,
@@ -44,8 +46,8 @@ CREATE TABLE users (
 -- ============================================================
 
 CREATE TABLE education (
-  id          VARCHAR(36)  NOT NULL DEFAULT (UUID()),
-  user_id     VARCHAR(36)  NOT NULL,
+  id          CHAR(36)     NOT NULL DEFAULT (UUID()),
+  user_id     CHAR(36)     NOT NULL,
   institution VARCHAR(500) NOT NULL,
   degree      VARCHAR(500) NOT NULL,
   field       VARCHAR(500) NOT NULL,
@@ -66,8 +68,8 @@ CREATE TABLE education (
 -- ============================================================
 
 CREATE TABLE experience (
-  id           VARCHAR(36)  NOT NULL DEFAULT (UUID()),
-  user_id      VARCHAR(36)  NOT NULL,
+  id           CHAR(36)     NOT NULL DEFAULT (UUID()),
+  user_id      CHAR(36)     NOT NULL,
   title        VARCHAR(500) NOT NULL,
   organization VARCHAR(500) NOT NULL,
   start        VARCHAR(7)   NOT NULL, -- ISO month YYYY-MM
@@ -87,8 +89,8 @@ CREATE TABLE experience (
 -- ============================================================
 
 CREATE TABLE certifications (
-  id             VARCHAR(36)  NOT NULL DEFAULT (UUID()),
-  user_id        VARCHAR(36)  NOT NULL,
+  id             CHAR(36)     NOT NULL DEFAULT (UUID()),
+  user_id        CHAR(36)     NOT NULL,
   name           VARCHAR(500) NOT NULL,
   issuer         VARCHAR(500) NOT NULL,
   date           VARCHAR(7)   NOT NULL, -- YYYY-MM
@@ -105,8 +107,8 @@ CREATE TABLE certifications (
 -- ============================================================
 
 CREATE TABLE user_skills (
-  id         VARCHAR(36)  NOT NULL DEFAULT (UUID()),
-  user_id    VARCHAR(36)  NOT NULL,
+  id         CHAR(36)     NOT NULL DEFAULT (UUID()),
+  user_id    CHAR(36)     NOT NULL,
   skill_name VARCHAR(255) NOT NULL,
   sort_order INT          NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
@@ -123,13 +125,13 @@ CREATE TABLE user_skills (
 -- ============================================================
 
 CREATE TABLE projects (
-  id               VARCHAR(36)  NOT NULL DEFAULT (UUID()),
-  user_id          VARCHAR(36)  NOT NULL,
+  id               CHAR(36)     NOT NULL DEFAULT (UUID()),
+  user_id          CHAR(36)     NOT NULL,
   title            VARCHAR(500) NOT NULL,
-  summary          TEXT         NOT NULL DEFAULT '',
-  ai_summary       TEXT         NOT NULL DEFAULT '',
+  summary          TEXT         NULL,
+  ai_summary       TEXT         NULL,
   hero_image_url   TEXT         NULL,
-  description_html LONGTEXT     NOT NULL DEFAULT '',
+  description_html LONGTEXT     NULL,
   live_demo_url    TEXT         NULL,
   href             TEXT         NULL,
   category         ENUM('academic','personal','research','hackathon','course','other') NOT NULL DEFAULT 'other',
@@ -165,8 +167,8 @@ CREATE TABLE projects (
 -- ============================================================
 
 CREATE TABLE project_attachments (
-  id            VARCHAR(36)  NOT NULL DEFAULT (UUID()),
-  project_id    VARCHAR(36)  NOT NULL,
+  id            CHAR(36)     NOT NULL DEFAULT (UUID()),
+  project_id    CHAR(36)     NOT NULL,
   type          ENUM('image','video','pdf','link') NOT NULL,
   url           TEXT         NOT NULL,
   title         VARCHAR(500) NULL,
@@ -184,9 +186,9 @@ CREATE TABLE project_attachments (
 -- ============================================================
 
 CREATE TABLE project_team_members (
-  id          VARCHAR(36)  NOT NULL DEFAULT (UUID()),
-  project_id  VARCHAR(36)  NOT NULL,
-  user_id     VARCHAR(36)  NULL,
+  id          CHAR(36)     NOT NULL DEFAULT (UUID()),
+  project_id  CHAR(36)     NOT NULL,
+  user_id     CHAR(36)     NULL,
   name        VARCHAR(255) NOT NULL,
   role        VARCHAR(255) NULL,
   avatar_url  TEXT         NULL,
@@ -208,8 +210,8 @@ CREATE TABLE project_team_members (
 -- ============================================================
 
 CREATE TABLE integrations (
-  id               VARCHAR(36)  NOT NULL DEFAULT (UUID()),
-  user_id          VARCHAR(36)  NOT NULL,
+  id               CHAR(36)     NOT NULL DEFAULT (UUID()),
+  user_id          CHAR(36)     NOT NULL,
   integration_type ENUM('linkedin','github') NOT NULL,
   status           ENUM('connected','not_connected') NOT NULL DEFAULT 'not_connected',
   access_token     TEXT         NULL,
@@ -230,8 +232,8 @@ CREATE TABLE integrations (
 -- ============================================================
 
 CREATE TABLE activities (
-  id                 VARCHAR(36)  NOT NULL DEFAULT (UUID()),
-  user_id            VARCHAR(36)  NOT NULL,
+  id                 CHAR(36)     NOT NULL DEFAULT (UUID()),
+  user_id            CHAR(36)     NOT NULL,
   type               ENUM('project','profile') NOT NULL,
   translation_key    VARCHAR(255) NOT NULL,
   translation_params JSON         NULL, -- Record<string, string | number>
@@ -249,15 +251,15 @@ CREATE TABLE activities (
 -- ============================================================
 
 CREATE TABLE notifications (
-  id              VARCHAR(36)  NOT NULL DEFAULT (UUID()),
-  user_id         VARCHAR(36)  NOT NULL,
+  id              CHAR(36)     NOT NULL DEFAULT (UUID()),
+  user_id         CHAR(36)     NOT NULL,
   type            ENUM('team_invite','team_accepted','team_rejected',
                        'project_verified','comment','contact_request',
                        'general') NOT NULL,
   title           VARCHAR(500) NOT NULL,
   message         TEXT         NULL,
   is_read         TINYINT(1)   NOT NULL DEFAULT 0,
-  reference_id    VARCHAR(36)  NULL,
+  reference_id    CHAR(36)     NULL,
   reference_type  VARCHAR(50)  NULL,
   link            TEXT         NULL,
   created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

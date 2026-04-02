@@ -26,8 +26,8 @@ Unlike `achievements` or `highlights` which are stored as JSON arrays, skills ha
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Not mapped to frontend — the frontend works with skill names as strings, not objects with IDs. |
-| `user_id` | `VARCHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Not mapped to frontend — the frontend works with skill names as strings, not objects with IDs. |
+| `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
 | `skill_name` | `VARCHAR(255)` | NO | — | The skill tag text (e.g., "React", "Python", "Data Analysis"). 255 chars is more than enough for any skill name. Indexed for search queries. |
 | `sort_order` | `INT` | NO | `0` | Display order on the profile. Skills appear in this order in the chips row. |
 
@@ -43,9 +43,9 @@ Unlike `achievements` or `highlights` which are stored as JSON arrays, skills ha
 
 ```json
 [
-  { "id": "sk_001", "user_id": "u_001", "skill_name": "TypeScript", "sort_order": 0 },
-  { "id": "sk_002", "user_id": "u_001", "skill_name": "React", "sort_order": 1 },
-  { "id": "sk_003", "user_id": "u_001", "skill_name": "Node.js", "sort_order": 2 },
-  { "id": "sk_004", "user_id": "u_001", "skill_name": "Machine Learning", "sort_order": 3 }
+  { "id": "e5a7c9db-4f6b-4d8e-a0c2-f3a4b5c6d7e8", "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479", "skill_name": "TypeScript", "sort_order": 0 },
+  { "id": "e5a7c9db-4f6b-4d8e-a0c2-f3a4b5c6d7e9", "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479", "skill_name": "React", "sort_order": 1 },
+  { "id": "e5a7c9db-4f6b-4d8e-a0c2-f3a4b5c6d7ea", "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479", "skill_name": "Node.js", "sort_order": 2 },
+  { "id": "e5a7c9db-4f6b-4d8e-a0c2-f3a4b5c6d7eb", "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479", "skill_name": "Machine Learning", "sort_order": 3 }
 ]
 ```

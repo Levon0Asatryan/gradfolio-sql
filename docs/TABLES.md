@@ -77,7 +77,7 @@ All foreign keys use `ON DELETE CASCADE` except `project_team_members.user_id` w
 
 ## Naming Conventions
 
-- **Primary keys**: `id VARCHAR(36)` with `DEFAULT (UUID())` — MySQL 8.0+ native UUID generation
+- **Primary keys**: `id CHAR(36)` with `DEFAULT (UUID())` — MySQL 8.0+ native UUID generation. All PKs use CHAR(36) with DEFAULT (UUID()) — inserts must omit the id column.
 - **Foreign keys**: `{entity}_id` (e.g., `user_id`, `project_id`)
 - **Column names**: `snake_case` (transformed to `camelCase` at the API layer)
 - **Timestamps**: `DATETIME` with `DEFAULT CURRENT_TIMESTAMP` and optional `ON UPDATE CURRENT_TIMESTAMP`

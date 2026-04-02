@@ -18,8 +18,8 @@ Stores education history entries for each user. Each row represents one degree o
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Maps to `Education.id`. |
-| `user_id` | `VARCHAR(36)` | NO | — | FK to `users.id`. Which user this education entry belongs to. CASCADE on delete — if the user is deleted, all their education entries are removed. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `Education.id`. |
+| `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. Which user this education entry belongs to. CASCADE on delete — if the user is deleted, all their education entries are removed. |
 | `institution` | `VARCHAR(500)` | NO | — | Name of the school/university (e.g., "National Polytechnic University of Armenia"). 500 chars covers long institution names with departments. Maps to `Education.institution`. |
 | `degree` | `VARCHAR(500)` | NO | — | Degree type (e.g., "Bachelor of Science", "Master of Engineering"). Maps to `Education.degree`. |
 | `field` | `VARCHAR(500)` | NO | — | Field of study (e.g., "Computer Science", "Electrical Engineering"). Maps to `Education.field`. |
@@ -40,8 +40,8 @@ Stores education history entries for each user. Each row represents one degree o
 
 ```json
 {
-  "id": "ed_001",
-  "user_id": "u_001",
+  "id": "b2d4f6a8-1c3e-4b5d-9e7f-a1b2c3d4e5f6",
+  "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
   "institution": "National Polytechnic University of Armenia",
   "degree": "Bachelor of Science",
   "field": "Computer Science",

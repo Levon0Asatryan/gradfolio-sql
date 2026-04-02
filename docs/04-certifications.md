@@ -18,8 +18,8 @@ Stores professional certifications and awards for each user (e.g., AWS Certified
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Maps to `Certification.id`. |
-| `user_id` | `VARCHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `Certification.id`. |
+| `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
 | `name` | `VARCHAR(500)` | NO | — | Certificate name (e.g., "AWS Certified Cloud Practitioner", "CCNA"). Maps to `Certification.name`. |
 | `issuer` | `VARCHAR(500)` | NO | — | Issuing organization (e.g., "Amazon Web Services", "Cisco", "Coursera"). Maps to `Certification.issuer`. |
 | `date` | `VARCHAR(7)` | NO | — | Date obtained in `YYYY-MM` format (e.g., `"2024-03"`). `VARCHAR(7)` to match the frontend format — certifications typically only need month precision. Maps to `Certification.date`. |
@@ -37,8 +37,8 @@ Stores professional certifications and awards for each user (e.g., AWS Certified
 
 ```json
 {
-  "id": "cert_001",
-  "user_id": "u_001",
+  "id": "d4f6b8ca-3e5a-4c7d-9f1b-e2a3b4c5d6e7",
+  "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
   "name": "AWS Certified Cloud Practitioner",
   "issuer": "Amazon Web Services",
   "date": "2024-03",

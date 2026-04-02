@@ -19,8 +19,8 @@ Stores media attachments for projects — images, videos, PDFs, and external lin
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. Maps to `ProjectAttachment.id`. |
-| `project_id` | `VARCHAR(36)` | NO | — | FK to `projects.id`. CASCADE on delete. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `ProjectAttachment.id`. |
+| `project_id` | `CHAR(36)` | NO | — | FK to `projects.id`. CASCADE on delete. |
 | `type` | `ENUM(...)` | NO | — | Attachment type. Values: `image`, `video`, `pdf`, `link`. Determines how the frontend renders it: images get lightbox preview, videos get YouTube embed detection, PDFs get download link, links get external navigation. Maps to `ProjectAttachment.type`. |
 | `url` | `TEXT` | NO | — | URL to the resource. Can be an uploaded file path (`/uploads/screenshot.png`), external URL (`https://youtube.com/watch?v=...`), or CDN link. `TEXT` because URLs vary in length. Maps to `ProjectAttachment.url`. |
 | `title` | `VARCHAR(500)` | YES | `NULL` | Display title for the attachment (e.g., "App Screenshot", "Demo Video", "Final Report"). Shown as label in the gallery. Maps to `ProjectAttachment.title?`. |
@@ -39,8 +39,8 @@ Stores media attachments for projects — images, videos, PDFs, and external lin
 ```json
 [
   {
-    "id": "att_001",
-    "project_id": "proj_001",
+    "id": "f6a8b0c2-5d7e-4f9a-b1c3-d4e5f6a7b8c9",
+    "project_id": "a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
     "type": "image",
     "url": "https://images.unsplash.com/photo-dashboard",
     "title": "Dashboard Screenshot",
@@ -48,8 +48,8 @@ Stores media attachments for projects — images, videos, PDFs, and external lin
     "sort_order": 0
   },
   {
-    "id": "att_002",
-    "project_id": "proj_001",
+    "id": "f6a8b0c2-5d7e-4f9a-b1c3-d4e5f6a7b8ca",
+    "project_id": "a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
     "type": "video",
     "url": "https://youtube.com/watch?v=demo123",
     "title": "Demo Walkthrough",
@@ -57,10 +57,10 @@ Stores media attachments for projects — images, videos, PDFs, and external lin
     "sort_order": 1
   },
   {
-    "id": "att_003",
-    "project_id": "proj_001",
+    "id": "f6a8b0c2-5d7e-4f9a-b1c3-d4e5f6a7b8cb",
+    "project_id": "a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
     "type": "pdf",
-    "url": "/uploads/proj_001/final-report.pdf",
+    "url": "/uploads/a1b2c3d4/final-report.pdf",
     "title": "Final Report",
     "thumbnail_url": null,
     "sort_order": 2

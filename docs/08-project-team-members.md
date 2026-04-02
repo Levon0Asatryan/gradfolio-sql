@@ -28,9 +28,9 @@ The frontend already has `TeamMember` type and `TeamList` component displaying t
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. Maps to `TeamMember.id`. |
-| `project_id` | `VARCHAR(36)` | NO | — | FK to `projects.id`. Which project this team member belongs to. CASCADE on delete — if the project is deleted, all team member records are removed. |
-| `user_id` | `VARCHAR(36)` | YES | `NULL` | FK to `users.id`. Links to the teammate's account on the platform. **Nullable** because the spec allows listing teammates who don't have accounts ("provided those teammates also have accounts" is a preference, not a hard requirement). When NULL, the person is listed by name only with no clickable profile link. SET NULL on delete — if the linked user deletes their account, the team member record stays (preserving project history) but the link is broken. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `TeamMember.id`. |
+| `project_id` | `CHAR(36)` | NO | — | FK to `projects.id`. Which project this team member belongs to. CASCADE on delete — if the project is deleted, all team member records are removed. |
+| `user_id` | `CHAR(36)` | YES | `NULL` | FK to `users.id`. Links to the teammate's account on the platform. **Nullable** because the spec allows listing teammates who don't have accounts ("provided those teammates also have accounts" is a preference, not a hard requirement). When NULL, the person is listed by name only with no clickable profile link. SET NULL on delete — if the linked user deletes their account, the team member record stays (preserving project history) but the link is broken. |
 | `name` | `VARCHAR(255)` | NO | — | Display name of the team member. Required even when `user_id` is set, because: (1) external teammates have no user record to pull a name from, (2) serves as a cache so the project page doesn't need to JOIN `users` just for names. Maps to `TeamMember.name`. |
 | `role` | `VARCHAR(255)` | YES | `NULL` | The teammate's role or contribution (e.g., "Lead Developer", "UI/UX Designer", "Research"). Optional — some projects may not define roles. Maps to `TeamMember.role?`. |
 | `avatar_url` | `TEXT` | YES | `NULL` | URL to the teammate's avatar image. Can be copied from the user's `avatar_url` when linking, or set manually for external teammates. Maps to `TeamMember.avatarUrl?`. |
@@ -71,30 +71,30 @@ WHERE ptm.user_id = ? AND ptm.status = 'pending';
 ```json
 [
   {
-    "id": "tm_001",
-    "project_id": "proj_001",
-    "user_id": "u_001",
+    "id": "a7b9c1d3-6e8f-4a0b-c2d4-e5f6a7b8c9d0",
+    "project_id": "a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
+    "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "name": "Gabe Nuels",
     "role": "Lead Developer",
-    "avatar_url": "https://i.pravatar.cc/150?u=u_001",
+    "avatar_url": "https://i.pravatar.cc/150?u=f47ac10b",
     "status": "accepted",
     "sort_order": 0,
     "created_at": "2024-02-10 09:00:00"
   },
   {
-    "id": "tm_002",
-    "project_id": "proj_001",
-    "user_id": "u_003",
+    "id": "a7b9c1d3-6e8f-4a0b-c2d4-e5f6a7b8c9d1",
+    "project_id": "a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
+    "user_id": "9c8b7a6d-5e4f-4321-abcd-fedcba987654",
     "name": "Sona Petrosyan",
     "role": "UI/UX Designer",
-    "avatar_url": "https://i.pravatar.cc/150?u=u_003",
+    "avatar_url": "https://i.pravatar.cc/150?u=9c8b7a6d",
     "status": "accepted",
     "sort_order": 1,
     "created_at": "2024-02-12 10:00:00"
   },
   {
-    "id": "tm_003",
-    "project_id": "proj_001",
+    "id": "a7b9c1d3-6e8f-4a0b-c2d4-e5f6a7b8c9d2",
+    "project_id": "a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
     "user_id": null,
     "name": "Armen Hakobyan",
     "role": "Hardware Engineer",

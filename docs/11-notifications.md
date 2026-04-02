@@ -18,13 +18,13 @@ Stores user notifications — private alerts about events that require attention
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. |
-| `user_id` | `VARCHAR(36)` | NO | — | FK to `users.id`. The recipient of the notification. CASCADE on delete — if the user is deleted, their notifications are removed. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. |
+| `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. The recipient of the notification. CASCADE on delete — if the user is deleted, their notifications are removed. |
 | `type` | `ENUM(...)` | NO | — | Notification category. Determines the icon, color, and behavior in the notification UI. Values: `team_invite` (someone added you to a project team), `team_accepted` (your teammate accepted the invitation), `team_rejected` (your teammate declined), `project_verified` (a project was verified by admin/endorsement), `comment` (someone commented on your project — future feature), `contact_request` (an employer wants to contact you), `general` (catch-all for other notifications). |
 | `title` | `VARCHAR(500)` | NO | — | Short notification headline (e.g., "Team invitation", "Project verified"). Displayed as the primary text in the notification list. 500 chars allows descriptive titles. |
 | `message` | `TEXT` | YES | `NULL` | Detailed notification body (e.g., "Gabe Nuels added you as UI/UX Designer on Smart Garden IoT System"). Optional — some notifications may only need a title. `TEXT` for flexibility. |
 | `is_read` | `TINYINT(1)` | NO | `0` | Read state. `0` = unread (shows badge/highlight), `1` = read (dimmed). The most common query is "get unread notifications for user X" which is optimized by the composite index. |
-| `reference_id` | `VARCHAR(36)` | YES | `NULL` | ID of the related entity (e.g., a `project_id` for team invites, a `user_id` for contact requests). This is a **polymorphic reference** — the actual table is determined by `reference_type`. Not a formal FK to avoid coupling to a single table. |
+| `reference_id` | `CHAR(36)` | YES | `NULL` | ID of the related entity (e.g., a `project_id` for team invites, a `user_id` for contact requests). This is a **polymorphic reference** — the actual table is determined by `reference_type`. Not a formal FK to avoid coupling to a single table. |
 | `reference_type` | `VARCHAR(50)` | YES | `NULL` | Type of the referenced entity. Expected values: `project`, `user`, `certification`, etc. Used together with `reference_id` to construct the related entity lookup. 50 chars covers any table name. |
 | `link` | `TEXT` | YES | `NULL` | Pre-computed URL path to navigate to when the notification is clicked (e.g., `/projects/proj_001`, `/profile/u_003`). Stored so the frontend doesn't need to compute URLs from reference types — just navigate to `link`. `TEXT` because URLs can be long. |
 | `created_at` | `DATETIME` | NO | `CURRENT_TIMESTAMP` | When the notification was created. Used for sorting (newest first) and display ("2 hours ago"). |
@@ -64,27 +64,27 @@ WHERE user_id = ? AND is_read = 0;
 ```json
 [
   {
-    "id": "notif_001",
-    "user_id": "u_003",
+    "id": "d0e2f4a6-9b1c-4d3e-f5a7-b8c9d0e1f2a3",
+    "user_id": "9c8b7a6d-5e4f-4321-abcd-fedcba987654",
     "type": "team_invite",
     "title": "Team invitation",
     "message": "Gabe Nuels added you as UI/UX Designer on \"Smart Garden IoT System\"",
     "is_read": 0,
-    "reference_id": "proj_001",
+    "reference_id": "a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
     "reference_type": "project",
-    "link": "/projects/proj_001",
+    "link": "/projects/a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
     "created_at": "2025-03-20 14:30:00"
   },
   {
-    "id": "notif_002",
-    "user_id": "u_001",
+    "id": "d0e2f4a6-9b1c-4d3e-f5a7-b8c9d0e1f2a4",
+    "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "type": "team_accepted",
     "title": "Invitation accepted",
     "message": "Sona Petrosyan accepted your invitation to \"Smart Garden IoT System\"",
     "is_read": 1,
-    "reference_id": "proj_001",
+    "reference_id": "a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
     "reference_type": "project",
-    "link": "/projects/proj_001",
+    "link": "/projects/a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
     "created_at": "2025-03-21 10:00:00"
   }
 ]

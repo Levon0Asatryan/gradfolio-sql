@@ -20,8 +20,8 @@ Tracks LinkedIn and GitHub OAuth connections per user — connection status, OAu
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. Internal DB identifier. **Note**: The frontend uses `integration_type` as its `id` field (`Integration.id = "linkedin" \| "github"`). The API layer maps between them. |
-| `user_id` | `VARCHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Internal DB identifier. **Note**: The frontend uses `integration_type` as its `id` field (`Integration.id = "linkedin" \| "github"`). The API layer maps between them. |
+| `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
 | `integration_type` | `ENUM(...)` | NO | — | Which external service. Values: `linkedin`, `github`. Combined with `user_id` in a UNIQUE constraint — one connection per type per user. Maps to `Integration.id` on the frontend. |
 | `status` | `ENUM(...)` | NO | `'not_connected'` | Current connection state. Values: `connected` (OAuth completed, tokens stored), `not_connected` (not linked or disconnected). Maps to `Integration.status`. |
 | `access_token` | `TEXT` | YES | `NULL` | OAuth access token for making API calls to GitHub/LinkedIn. `TEXT` because token lengths vary by provider (GitHub ~40 chars, LinkedIn can be longer). **Must be encrypted at the application layer** before storage — stored as ciphertext, decrypted when needed for API calls. `NULL` when not connected. |
@@ -48,8 +48,8 @@ The frontend `Integration` type has `name` and `description` fields (e.g., `name
 ```json
 [
   {
-    "id": "int_001",
-    "user_id": "u_001",
+    "id": "b8c0d2e4-7f9a-4b1c-d3e5-f6a7b8c9d0e1",
+    "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "integration_type": "github",
     "status": "connected",
     "access_token": "gho_encrypted_abc123...",
@@ -61,8 +61,8 @@ The frontend `Integration` type has `name` and `description` fields (e.g., `name
     "updated_at": "2025-03-20 14:30:00"
   },
   {
-    "id": "int_002",
-    "user_id": "u_001",
+    "id": "b8c0d2e4-7f9a-4b1c-d3e5-f6a7b8c9d0e2",
+    "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "integration_type": "linkedin",
     "status": "not_connected",
     "access_token": null,

@@ -18,8 +18,8 @@ Stores work experience entries for each user — internships, part-time jobs, re
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Maps to `Experience.id`. |
-| `user_id` | `VARCHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `Experience.id`. |
+| `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
 | `title` | `VARCHAR(500)` | NO | — | Job title (e.g., "Software Engineering Intern", "Research Assistant"). Maps to `Experience.title`. |
 | `organization` | `VARCHAR(500)` | NO | — | Company or institution name (e.g., "Google", "MIT AI Lab"). Maps to `Experience.organization`. |
 | `start` | `VARCHAR(7)` | NO | — | Start date in ISO month format `YYYY-MM` (e.g., `"2023-06"`). `VARCHAR(7)` because this is a formatted string, not a full date — we only need year and month precision. Matches the frontend format exactly. Maps to `Experience.start`. |
@@ -40,8 +40,8 @@ Stores work experience entries for each user — internships, part-time jobs, re
 
 ```json
 {
-  "id": "exp_001",
-  "user_id": "u_001",
+  "id": "c3e5a7b9-2d4f-4a6c-8e0b-d1f2a3b4c5d6",
+  "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
   "title": "Frontend Developer Intern",
   "organization": "ACME Corp",
   "start": "2023-06",

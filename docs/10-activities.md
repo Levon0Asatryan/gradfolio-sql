@@ -18,8 +18,8 @@ Stores activity feed events for each user — a timeline of actions like "Update
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. Maps to `Activity.id`. |
-| `user_id` | `VARCHAR(36)` | NO | — | FK to `users.id`. Whose activity feed this event belongs to. CASCADE on delete. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `Activity.id`. |
+| `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. Whose activity feed this event belongs to. CASCADE on delete. |
 | `type` | `ENUM(...)` | NO | — | Activity category. Values: `project` (project-related action), `profile` (profile-related action). Used to display different icons and colors in the activity feed. Maps to `Activity.type`. |
 | `translation_key` | `VARCHAR(255)` | NO | — | i18n translation key for the activity message (e.g., `"projectUpdated"`, `"profileViewed"`, `"newSkill"`). The frontend looks this up in the translation dictionary to render the message in the user's language. `VARCHAR(255)` is plenty for dot-notation keys. Maps to `Activity.translationKey` (snake_case → camelCase transform in API). |
 | `translation_params` | `JSON` | YES | `NULL` | Parameters to interpolate into the translated message (e.g., `{"projectName": "Smart Garden", "count": 3}`). The frontend's `interpolate()` function replaces `{projectName}` placeholders with these values. `JSON` because parameter shape varies by activity type. Maps to `Activity.translationParams?`. |
@@ -51,8 +51,8 @@ The translation dictionaries (`src/data/locales/en.ts`, `ru.ts`, `am.ts`) define
 ```json
 [
   {
-    "id": "act_001",
-    "user_id": "u_001",
+    "id": "c9d1e3f5-8a0b-4c2d-e4f6-a7b8c9d0e1f2",
+    "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "type": "project",
     "translation_key": "projectUpdated",
     "translation_params": {"projectName": "Smart Garden IoT System"},
@@ -60,8 +60,8 @@ The translation dictionaries (`src/data/locales/en.ts`, `ru.ts`, `am.ts`) define
     "details": null
   },
   {
-    "id": "act_002",
-    "user_id": "u_001",
+    "id": "c9d1e3f5-8a0b-4c2d-e4f6-a7b8c9d0e1f3",
+    "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "type": "profile",
     "translation_key": "profileViewed",
     "translation_params": {"count": 12},

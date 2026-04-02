@@ -23,13 +23,13 @@ This table maps to **three** different TypeScript types depending on context:
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `VARCHAR(36)` | NO | `UUID()` | Primary key. Used as route parameter in `/projects/{id}`. Maps to `ProjectDetailData.id`. |
-| `user_id` | `VARCHAR(36)` | NO | — | FK to `users.id`. The project owner/creator. CASCADE on delete. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Used as route parameter in `/projects/{id}`. Maps to `ProjectDetailData.id`. |
+| `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. The project owner/creator. CASCADE on delete. |
 | `title` | `VARCHAR(500)` | NO | — | Project name (e.g., "Smart Garden IoT System"). 500 chars covers descriptive titles. Maps to `ProjectDetailData.title` and profile `Project.name`. |
-| `summary` | `TEXT` | NO | `''` | Short text summary of the project. Used on profile cards and search results. Maps to profile `Project.summary` and dashboard `Project.description`. Defaults to empty string. |
-| `ai_summary` | `TEXT` | NO | `''` | AI-generated 2-3 sentence highlight (e.g., "An IoT project using Arduino and Raspberry Pi to automate home garden irrigation..."). Currently a manual text field on the frontend. Will be auto-generated via AI API in the future. Maps to `ProjectDetailData.aiSummary`. |
+| `summary` | `TEXT` | YES | `NULL` | Short text summary of the project. Used on profile cards and search results. Maps to profile `Project.summary` and dashboard `Project.description`. NULL when not provided. |
+| `ai_summary` | `TEXT` | YES | `NULL` | AI-generated 2-3 sentence highlight (e.g., "An IoT project using Arduino and Raspberry Pi to automate home garden irrigation..."). Currently a manual text field on the frontend. Will be auto-generated via AI API in the future. Maps to `ProjectDetailData.aiSummary`. |
 | `hero_image_url` | `TEXT` | YES | `NULL` | URL of the main banner image for the project page. Displayed at the top of the project detail page in 16:9 aspect ratio. `TEXT` because image URLs can be long (especially from CDNs). Maps to `ProjectDetailData.heroImageUrl?`. |
-| `description_html` | `LONGTEXT` | NO | `''` | Detailed project description as sanitized HTML. Can include headings, lists, links, formatted text. `LONGTEXT` (up to 4GB) because rich descriptions with embedded content can be large. The frontend sanitizes this before rendering (strips scripts, event handlers). Maps to `ProjectDetailData.descriptionHtml`. |
+| `description_html` | `LONGTEXT` | YES | `NULL` | Detailed project description as sanitized HTML. Can include headings, lists, links, formatted text. `LONGTEXT` (up to 4GB) because rich descriptions with embedded content can be large. The frontend sanitizes this before rendering (strips scripts, event handlers). Maps to `ProjectDetailData.descriptionHtml`. |
 | `live_demo_url` | `TEXT` | YES | `NULL` | URL to the live deployed application (e.g., `https://my-app.vercel.app`). Shown as a button on the project header. Maps to `ProjectDetailData.liveDemoUrl?`. |
 | `href` | `TEXT` | YES | `NULL` | General link for the project (used on profile cards when project is not on this platform). Maps to profile `Project.href?`. |
 | `category` | `ENUM(...)` | NO | `'other'` | Project category. Values: `academic`, `personal`, `research`, `hackathon`, `course`, `other`. Used for filtering on the projects list page and search. The ENUM includes all values from both frontend types — profile-level uses a subset (`academic`, `personal`, `research`, `other`) while detail-level adds `course` and `hackathon`. Maps to `ProjectMetadata.category`. |
@@ -63,8 +63,8 @@ This table maps to **three** different TypeScript types depending on context:
 
 ```json
 {
-  "id": "proj_001",
-  "user_id": "u_001",
+  "id": "a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
+  "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
   "title": "Smart Garden IoT System",
   "summary": "An IoT system for automated home garden irrigation with real-time monitoring.",
   "ai_summary": "An Internet-of-Things project using Arduino and Raspberry Pi to automate home garden irrigation, featuring real-time soil monitoring and a mobile app dashboard.",
