@@ -1,7 +1,21 @@
 -- ============================================================
 -- Gradfolio — Example Queries
--- Common queries the backend API will need.
--- Each query is labeled with the API endpoint it supports.
+--
+-- ILLUSTRATIVE ONLY. Do not copy these into application code: the
+-- API's real queries live in gradfolio-api, against the schema its
+-- migrations own (which has moved on from this baseline).
+--
+-- What they do show are the rules every real query must keep:
+--   * @viewer is the caller's users.id (NULL when logged out).
+--   * Ownership: every write to a user-owned row is scoped to its owner
+--     (user_id = @viewer, or through the owning project). 0 rows
+--     changed means "not yours" and the API answers 404.
+--   * Visibility: a private (is_public = 0) profile or project is
+--     visible to its owner only; anyone else gets 404. (The tracker's
+--     proposed Q3 rule; gradfolio-api M3 decides it.)
+--   * Ids are supplied by the caller (@new_id): with DEFAULT (UUID()),
+--     LAST_INSERT_ID() is 0 and the new id cannot be read back.
+--   * Multi-statement writes run in one transaction.
 -- ============================================================
 
 
@@ -10,8 +24,12 @@
 --    GET /api/users/:id
 -- ============================================================
 
--- 1a. User base info
-SELECT * FROM users WHERE id = @uid;
+-- 1a. User base info. Never SELECT *: birthday, phone and auth0_id are
+--     private, and tokens live elsewhere.
+SELECT id, name, headline, location, verified, is_public, avatar_url, bio,
+       github, linkedin, twitter, website, created_at
+FROM users
+WHERE id = @uid AND (is_public = 1 OR id = @viewer);
 
 -- 1b. Education (ordered)
 SELECT * FROM education WHERE user_id = @uid ORDER BY sort_order;
@@ -28,7 +46,7 @@ SELECT skill_name FROM user_skills WHERE user_id = @uid ORDER BY sort_order;
 -- 1f. User's own projects (summary for profile cards)
 SELECT id, title, summary, category, status, tags, technologies, created_at
 FROM projects
-WHERE user_id = @uid AND is_public = 1
+WHERE user_id = @uid AND (is_public = 1 OR user_id = @viewer)
 ORDER BY created_at DESC;
 
 -- 1g. Projects where user is a team member (appears on their profile too)
@@ -44,17 +62,24 @@ ORDER BY p.created_at DESC;
 --    GET /api/projects/:id
 -- ============================================================
 
--- 2a. Project base info
-SELECT * FROM projects WHERE id = @pid;
+-- 2a. Project base info: visible to anyone if public, else to its owner only
+SELECT * FROM projects
+WHERE id = @pid AND (is_public = 1 OR user_id = @viewer);
 
--- 2b. Attachments (ordered)
-SELECT * FROM project_attachments WHERE project_id = @pid ORDER BY sort_order;
+-- 2b. Attachments (ordered), only through a project the viewer may see
+SELECT a.*
+FROM project_attachments a
+JOIN projects p ON p.id = a.project_id
+WHERE a.project_id = @pid AND (p.is_public = 1 OR p.user_id = @viewer)
+ORDER BY a.sort_order;
 
--- 2c. Team members (only accepted, ordered)
-SELECT id, user_id, name, role, avatar_url
-FROM project_team_members
-WHERE project_id = @pid AND status = 'accepted'
-ORDER BY sort_order;
+-- 2c. Team members (only accepted, ordered), same visibility rule
+SELECT m.id, m.user_id, m.name, m.role, m.avatar_url
+FROM project_team_members m
+JOIN projects p ON p.id = m.project_id
+WHERE m.project_id = @pid AND m.status = 'accepted'
+  AND (p.is_public = 1 OR p.user_id = @viewer)
+ORDER BY m.sort_order;
 
 -- 2d. Project owner info (for header)
 SELECT u.id, u.name, u.headline, u.avatar_url
@@ -69,25 +94,25 @@ WHERE p.id = @pid;
 -- ============================================================
 
 -- 3a. Total projects count
-SELECT COUNT(*) AS total_projects FROM projects WHERE user_id = @uid;
+SELECT COUNT(*) AS total_projects FROM projects WHERE user_id = @viewer;
 
 -- 3b. Recent projects (for dashboard cards)
 SELECT id, title, summary, status, technologies, updated_at
 FROM projects
-WHERE user_id = @uid
+WHERE user_id = @viewer
 ORDER BY updated_at DESC
 LIMIT 4;
 
 -- 3c. Activity feed (recent 20)
 SELECT * FROM activities
-WHERE user_id = @uid
+WHERE user_id = @viewer
 ORDER BY timestamp DESC
 LIMIT 20;
 
 -- 3d. Recent activity count (last 30 days)
 SELECT COUNT(*) AS recent_activities
 FROM activities
-WHERE user_id = @uid AND timestamp > NOW() - INTERVAL 30 DAY;
+WHERE user_id = @viewer AND timestamp > NOW() - INTERVAL 30 DAY;
 
 
 -- ============================================================
@@ -117,11 +142,17 @@ WHERE u.is_public = 1
   AND us.skill_name = @skill_name
 LIMIT 20;
 
--- 4d. Search projects by technology tag (JSON contains)
-SELECT id, title, summary, technologies, category, hero_image_url
-FROM projects
-WHERE is_public = 1
-  AND JSON_CONTAINS(technologies, CONCAT('"', @tech, '"'))
+-- 4d. Search projects by technology tag.
+--     Not JSON_CONTAINS: it compares exactly, so 'react' misses 'React'.
+--     The JSON_TABLE column collates as utf8mb4_unicode_ci, so this matches
+--     case-insensitively. Keep the comma-join form: on MySQL 8.4.11 the
+--     correlated form (WHERE EXISTS (SELECT ... FROM JSON_TABLE(p.technologies
+--     ...))) returns no rows. gradfolio-api keeps technologies in a table.
+SELECT DISTINCT p.id, p.title, p.summary, p.technologies, p.category, p.hero_image_url
+FROM projects p,
+     JSON_TABLE(p.technologies, '$[*]' COLUMNS (tech VARCHAR(255) PATH '$')) AS jt
+WHERE p.is_public = 1
+  AND jt.tech = @tech
 LIMIT 20;
 
 
@@ -157,7 +188,7 @@ LIMIT 30;
 
 SELECT integration_type, status, last_synced_at
 FROM integrations
-WHERE user_id = @uid;
+WHERE user_id = @viewer;
 
 
 -- ============================================================
@@ -168,20 +199,21 @@ WHERE user_id = @uid;
 -- 7a. Unread count (for badge)
 SELECT COUNT(*) AS unread_count
 FROM notifications
-WHERE user_id = @uid AND is_read = 0;
+WHERE user_id = @viewer AND is_read = 0;
 
 -- 7b. Recent notifications (paginated)
 SELECT * FROM notifications
-WHERE user_id = @uid
+WHERE user_id = @viewer
 ORDER BY created_at DESC
 LIMIT 20 OFFSET 0;
 
--- 7c. Mark one as read
-UPDATE notifications SET is_read = 1 WHERE id = @nid;
+-- 7c. Mark one as read -- the caller's own notification only
+--     (0 rows changed -> 404)
+UPDATE notifications SET is_read = 1 WHERE id = @nid AND user_id = @viewer;
 
 -- 7d. Mark all as read
 UPDATE notifications SET is_read = 1
-WHERE user_id = @uid AND is_read = 0;
+WHERE user_id = @viewer AND is_read = 0;
 
 
 -- ============================================================
@@ -190,23 +222,28 @@ WHERE user_id = @uid AND is_read = 0;
 --    PUT  /api/projects/:id/team/:memberId
 -- ============================================================
 
--- 8a. Add teammate to project
-INSERT INTO project_team_members (project_id, user_id, name, role, avatar_url, status)
-VALUES (@pid, @teammate_uid, @name, @role, @avatar, 'pending');
+-- 8a. Add teammate to project -- only the project's owner may
+--     (0 rows inserted -> 404). The owner is never a member row. A teammate
+--     who rejected is re-invited with an UPDATE: UNIQUE (project_id, user_id)
+--     rejects a second INSERT.
+INSERT INTO project_team_members (id, project_id, user_id, name, role, avatar_url, status)
+SELECT @new_id, p.id, @teammate_uid, @name, @role, @avatar, 'pending'
+FROM projects p
+WHERE p.id = @pid AND p.user_id = @viewer AND @teammate_uid <> @viewer;
 
--- 8b. Accept invitation
+-- 8b. Accept invitation -- the invitee only, and only while pending
 UPDATE project_team_members SET status = 'accepted'
-WHERE id = @tm_id AND user_id = @uid;
+WHERE id = @tm_id AND user_id = @viewer AND status = 'pending';
 
--- 8c. Reject invitation
+-- 8c. Reject invitation -- the invitee only, and only while pending
 UPDATE project_team_members SET status = 'rejected'
-WHERE id = @tm_id AND user_id = @uid;
+WHERE id = @tm_id AND user_id = @viewer AND status = 'pending';
 
 -- 8d. Get pending invitations for a user
 SELECT ptm.*, p.title AS project_title, p.hero_image_url
 FROM project_team_members ptm
 JOIN projects p ON p.id = ptm.project_id
-WHERE ptm.user_id = @uid AND ptm.status = 'pending'
+WHERE ptm.user_id = @viewer AND ptm.status = 'pending'
 ORDER BY ptm.created_at DESC;
 
 
@@ -245,6 +282,7 @@ LIMIT 20;
 --     PUT /api/users/me
 --     PUT /api/users/me/education
 --     PUT /api/users/me/skills
+--     Here @uid is the caller (@viewer): every write is scoped to it.
 -- ============================================================
 
 -- 10a. Update user profile fields
@@ -255,8 +293,8 @@ SET name = @name, headline = @headline, location = @location,
 WHERE id = @uid;
 
 -- 10b. Add education entry
-INSERT INTO education (user_id, institution, degree, field, start_year, end_year, description, highlights, sort_order)
-VALUES (@uid, @institution, @degree, @field, @start_year, @end_year, @desc, @highlights_json, @order);
+INSERT INTO education (id, user_id, institution, degree, field, start_year, end_year, description, highlights, sort_order)
+VALUES (@new_id, @uid, @institution, @degree, @field, @start_year, @end_year, @desc, @highlights_json, @order);
 
 -- 10c. Update education entry
 UPDATE education
@@ -268,16 +306,19 @@ WHERE id = @eid AND user_id = @uid;
 -- 10d. Delete education entry
 DELETE FROM education WHERE id = @eid AND user_id = @uid;
 
--- 10e. Replace all skills (delete + re-insert)
+-- 10e. Replace all skills: one transaction, or a failure between the DELETE
+--      and the INSERTs leaves the user with no skills at all
+START TRANSACTION;
 DELETE FROM user_skills WHERE user_id = @uid;
 -- Then insert each skill:
-INSERT INTO user_skills (user_id, skill_name, sort_order)
-VALUES (@uid, @skill, @order);
+INSERT INTO user_skills (id, user_id, skill_name, sort_order)
+VALUES (@new_id, @uid, @skill, @order);
+COMMIT;
 
 -- 10f. Create new project
-INSERT INTO projects (user_id, title, summary, ai_summary, description_html, category, status,
+INSERT INTO projects (id, user_id, title, summary, ai_summary, description_html, category, status,
                       technologies, tags, repo_url, live_demo_url, meta_start_date, meta_course, meta_professor)
-VALUES (@uid, @title, @summary, @ai_summary, @desc_html, @category, 'ongoing',
+VALUES (@new_id, @uid, @title, @summary, @ai_summary, @desc_html, @category, 'ongoing',
         @technologies_json, @tags_json, @repo_url, @demo_url, @start_date, @course, @professor);
 
 -- 10g. Delete project (cascades to attachments and team members)
