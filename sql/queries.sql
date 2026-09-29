@@ -31,22 +31,34 @@ SELECT id, name, headline, location, verified, is_public, avatar_url, bio,
 FROM users
 WHERE id = @uid AND (is_public = 1 OR id = @viewer);
 
+-- 1b-1g. Every section query repeats 1a's visibility predicate, so none of
+--        them leaks a private profile when run on its own.
+
 -- 1b. Education (ordered)
-SELECT * FROM education WHERE user_id = @uid ORDER BY sort_order;
+SELECT * FROM education WHERE user_id = @uid
+  AND EXISTS (SELECT 1 FROM users u WHERE u.id = @uid AND (u.is_public = 1 OR u.id = @viewer))
+ORDER BY sort_order;
 
 -- 1c. Experience (ordered)
-SELECT * FROM experience WHERE user_id = @uid ORDER BY sort_order;
+SELECT * FROM experience WHERE user_id = @uid
+  AND EXISTS (SELECT 1 FROM users u WHERE u.id = @uid AND (u.is_public = 1 OR u.id = @viewer))
+ORDER BY sort_order;
 
 -- 1d. Certifications (ordered)
-SELECT * FROM certifications WHERE user_id = @uid ORDER BY sort_order;
+SELECT * FROM certifications WHERE user_id = @uid
+  AND EXISTS (SELECT 1 FROM users u WHERE u.id = @uid AND (u.is_public = 1 OR u.id = @viewer))
+ORDER BY sort_order;
 
 -- 1e. Skills (ordered)
-SELECT skill_name FROM user_skills WHERE user_id = @uid ORDER BY sort_order;
+SELECT skill_name FROM user_skills WHERE user_id = @uid
+  AND EXISTS (SELECT 1 FROM users u WHERE u.id = @uid AND (u.is_public = 1 OR u.id = @viewer))
+ORDER BY sort_order;
 
 -- 1f. User's own projects (summary for profile cards)
 SELECT id, title, summary, category, status, tags, technologies, created_at
 FROM projects
 WHERE user_id = @uid AND (is_public = 1 OR user_id = @viewer)
+  AND EXISTS (SELECT 1 FROM users u WHERE u.id = @uid AND (u.is_public = 1 OR u.id = @viewer))
 ORDER BY created_at DESC;
 
 -- 1g. Projects where user is a team member (appears on their profile too)
@@ -54,6 +66,7 @@ SELECT p.id, p.title, p.summary, p.category, p.tags, p.technologies, p.created_a
 FROM projects p
 JOIN project_team_members ptm ON ptm.project_id = p.id
 WHERE ptm.user_id = @uid AND ptm.status = 'accepted' AND p.is_public = 1
+  AND EXISTS (SELECT 1 FROM users u WHERE u.id = @uid AND (u.is_public = 1 OR u.id = @viewer))
 ORDER BY p.created_at DESC;
 
 
@@ -85,7 +98,7 @@ ORDER BY m.sort_order;
 SELECT u.id, u.name, u.headline, u.avatar_url
 FROM users u
 JOIN projects p ON p.user_id = u.id
-WHERE p.id = @pid;
+WHERE p.id = @pid AND (p.is_public = 1 OR p.user_id = @viewer);
 
 
 -- ============================================================
@@ -227,7 +240,10 @@ WHERE user_id = @viewer AND is_read = 0;
 --     who rejected is re-invited with an UPDATE: UNIQUE (project_id, user_id)
 --     rejects a second INSERT.
 INSERT INTO project_team_members (id, project_id, user_id, name, role, avatar_url, status)
-SELECT @new_id, p.id, @teammate_uid, @name, @role, @avatar, 'pending'
+SELECT @new_id, p.id, @teammate_uid, @name, @role, @avatar,
+       -- A teammate without an account cannot answer an invite: named only,
+       -- shown at once (the tracker's proposed Q4).
+       CASE WHEN @teammate_uid IS NULL THEN 'accepted' ELSE 'pending' END
 FROM projects p
 WHERE p.id = @pid AND p.user_id = @viewer
   -- NULL is an external teammate (no account); NULL <> @viewer would be
