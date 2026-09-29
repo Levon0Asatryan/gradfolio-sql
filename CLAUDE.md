@@ -1,11 +1,16 @@
 # Gradfolio SQL
 
-MySQL 8.4 database schema for the Gradfolio Student Portfolio Management System.
+MySQL 8.4 schema reference for the Gradfolio Student Portfolio Management System.
+
+**The schema is owned by [gradfolio-api](https://github.com/Levon0Asatryan/gradfolio-api)'s
+migrations** (`src/core/db/migrations`, decided in its `docs/m1-plan.md`, Q2).
+`sql/schema.sql` here is frozen as their baseline (`0001_baseline`). Do not change the
+schema in this repository: write a migration in gradfolio-api.
 
 ## Overview
 
 - **Database**: MySQL 8.4 (hosted on Aiven free tier)
-- **Tables**: 12
+- **Tables**: 11 (at the baseline)
 - **Schema file**: `sql/schema.sql`
 - **Seed data**: `sql/seed.sql`
 - **Local dev**: Docker Compose (`docker-compose.yml`) with MySQL + Adminer
@@ -18,17 +23,17 @@ users                          Core user accounts and profile data (18 columns)
 ├── experience                 Work/internship experience entries (10 columns)
 ├── certifications             Professional certifications (7 columns)
 ├── user_skills                Skill tags (4 columns)
-├── projects                   Full project entries with metadata and repo info (24 columns)
+├── projects                   Full project entries with metadata and repo info (25 columns)
 │   ├── project_attachments    Media attachments: images, videos, PDFs, links (7 columns)
 │   └── project_team_members   Team collaborators with invitation status (9 columns)
-├── integrations               LinkedIn/GitHub OAuth connections (10 columns)
+├── integrations               LinkedIn/GitHub OAuth connections (11 columns)
 ├── activities                 Activity feed timeline events (7 columns)
 └── notifications              User notifications: team invites, verifications (10 columns)
 ```
 
 ## Key Conventions
 
-- **Primary keys**: `CHAR(36) NOT NULL DEFAULT (UUID())` — always auto-generated, never provided in INSERT
+- **Primary keys**: `CHAR(36) NOT NULL DEFAULT (UUID())`, but the application supplies every id: relying on the default leaves `LAST_INSERT_ID()` at 0
 - **Foreign keys**: `CHAR(36)` matching parent PK type, named `{entity}_id`
 - **Column names**: `snake_case` (transformed to `camelCase` at API layer)
 - **Booleans**: `TINYINT(1)` — `0` = false, `1` = true
@@ -61,14 +66,13 @@ Detailed per-table docs in `docs/`:
 ## Commands
 
 ```bash
-# Local development with Docker
+# Browse the baseline schema with its sample data (schema + seed load on first boot)
 docker compose up -d          # Start MySQL + Adminer
 docker compose down           # Stop containers
 docker compose down -v        # Stop and delete all data
 
-# Load schema (Aiven or local)
-mysql -h <host> -P <port> -u <user> -p <db> < sql/schema.sql
-mysql -h <host> -P <port> -u <user> -p <db> < sql/seed.sql
+# A real database (local or Aiven) is created by gradfolio-api:
+#   npm run migrate    (then npm run db:seed for demo data)
 ```
 
 ## Environment

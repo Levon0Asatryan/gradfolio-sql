@@ -1,6 +1,6 @@
 # Gradfolio Database — Tables Overview
 
-## All Tables (12)
+## All Tables (11)
 
 | # | Table | Columns | Purpose |
 | --- | --- | --- | --- |
@@ -9,14 +9,14 @@
 | 3 | `experience` | 10 | Work/internship experience entries per user |
 | 4 | `certifications` | 7 | Professional certifications per user |
 | 5 | `user_skills` | 4 | Skill tags per user |
-| 6 | `projects` | 24 | Full project entries with metadata and repo info |
+| 6 | `projects` | 25 | Full project entries with metadata and repo info |
 | 7 | `project_attachments` | 7 | Media attachments (images, videos, PDFs, links) per project |
 | 8 | `project_team_members` | 9 | Team collaborators per project with invitation status |
-| 9 | `integrations` | 10 | LinkedIn/GitHub OAuth connections per user |
+| 9 | `integrations` | 11 | LinkedIn/GitHub OAuth connections per user |
 | 10 | `activities` | 7 | Activity feed timeline events per user |
 | 11 | `notifications` | 10 | User notifications (team invites, verifications, etc.) |
 
-**Total: 12 tables, 116 columns**
+**Total: 11 tables, 118 columns**
 
 ---
 
@@ -70,14 +70,14 @@ All foreign keys use `ON DELETE CASCADE` except `project_team_members.user_id` w
 | `projects` | `tags` | `string[]` | `["web-app", "machine-learning", "capstone"]` |
 | `projects` | `technologies` | `string[]` | `["Python", "TensorFlow", "Flask"]` |
 | `projects` | `links` | `{label: string, url: string}[]` | `[{"label": "Paper", "url": "https://doi.org/..."}]` |
-| `projects` | `files` | `{label: string, url: string}[]` | `[{"label": "Report.pdf", "url": "/uploads/..."}]` |
+| `projects` | `files` | `{label: string, url: string}[]` | `[{"label": "Report.pdf", "url": "https://files.example.com/report.pdf"}]` |
 | `activities` | `translation_params` | `Record<string, string \| number>` | `{"projectName": "Smart Garden", "count": 3}` |
 
 ---
 
 ## Naming Conventions
 
-- **Primary keys**: `id CHAR(36)` with `DEFAULT (UUID())` — MySQL 8.0+ native UUID generation. All PKs use CHAR(36) with DEFAULT (UUID()) — inserts must omit the id column.
+- **Primary keys**: `id CHAR(36)` with `DEFAULT (UUID())`. The application supplies the id on every insert: relying on the default leaves `LAST_INSERT_ID()` at 0, so the new id cannot be read back.
 - **Foreign keys**: `{entity}_id` (e.g., `user_id`, `project_id`)
 - **Column names**: `snake_case` (transformed to `camelCase` at the API layer)
 - **Timestamps**: `DATETIME` with `DEFAULT CURRENT_TIMESTAMP` and optional `ON UPDATE CURRENT_TIMESTAMP`

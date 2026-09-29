@@ -1,8 +1,11 @@
 -- ============================================================
 -- Gradfolio Database Schema
 -- MySQL 8.4+
--- All PKs use CHAR(36) with GENERATED ALWAYS to enforce
--- auto-generated UUIDs — inserts must omit the id column.
+-- Frozen: this is the baseline of gradfolio-api's migrations
+-- (src/core/db/migrations/0001_baseline). Schema changes are made there.
+-- All PKs are CHAR(36) DEFAULT (UUID()), a plain default: an INSERT that
+-- relies on it leaves LAST_INSERT_ID() at 0, so the application supplies
+-- every id itself.
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS gradfolio

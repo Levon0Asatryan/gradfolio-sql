@@ -20,7 +20,7 @@ Tracks LinkedIn and GitHub OAuth connections per user — connection status, OAu
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Internal DB identifier. **Note**: The frontend uses `integration_type` as its `id` field (`Integration.id = "linkedin" \| "github"`). The API layer maps between them. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. UUID. **The application supplies it on every insert**: the column has `DEFAULT (UUID())`, but an INSERT that relies on it leaves `LAST_INSERT_ID()` at 0, so the new row's id cannot be read back. CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Internal DB identifier. **Note**: The frontend uses `integration_type` as its `id` field (`Integration.id = "linkedin" \| "github"`). The API layer maps between them. |
 | `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
 | `integration_type` | `ENUM(...)` | NO | — | Which external service. Values: `linkedin`, `github`. Combined with `user_id` in a UNIQUE constraint — one connection per type per user. Maps to `Integration.id` on the frontend. |
 | `status` | `ENUM(...)` | NO | `'not_connected'` | Current connection state. Values: `connected` (OAuth completed, tokens stored), `not_connected` (not linked or disconnected). Maps to `Integration.status`. |

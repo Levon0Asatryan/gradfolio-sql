@@ -26,7 +26,7 @@ Unlike `achievements` or `highlights` which are stored as JSON arrays, skills ha
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Not mapped to frontend — the frontend works with skill names as strings, not objects with IDs. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. UUID. **The application supplies it on every insert**: the column has `DEFAULT (UUID())`, but an INSERT that relies on it leaves `LAST_INSERT_ID()` at 0, so the new row's id cannot be read back. CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Not mapped to frontend — the frontend works with skill names as strings, not objects with IDs. |
 | `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
 | `skill_name` | `VARCHAR(255)` | NO | — | The skill tag text (e.g., "React", "Python", "Data Analysis"). 255 chars is more than enough for any skill name. Indexed for search queries. |
 | `sort_order` | `INT` | NO | `0` | Display order on the profile. Skills appear in this order in the chips row. |

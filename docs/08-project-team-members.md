@@ -28,7 +28,7 @@ The frontend already has `TeamMember` type and `TeamList` component displaying t
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `TeamMember.id`. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. UUID. **The application supplies it on every insert**: the column has `DEFAULT (UUID())`, but an INSERT that relies on it leaves `LAST_INSERT_ID()` at 0, so the new row's id cannot be read back. CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `TeamMember.id`. |
 | `project_id` | `CHAR(36)` | NO | — | FK to `projects.id`. Which project this team member belongs to. CASCADE on delete — if the project is deleted, all team member records are removed. |
 | `user_id` | `CHAR(36)` | YES | `NULL` | FK to `users.id`. Links to the teammate's account on the platform. **Nullable** because the spec allows listing teammates who don't have accounts ("provided those teammates also have accounts" is a preference, not a hard requirement). When NULL, the person is listed by name only with no clickable profile link. SET NULL on delete — if the linked user deletes their account, the team member record stays (preserving project history) but the link is broken. |
 | `name` | `VARCHAR(255)` | NO | — | Display name of the team member. Required even when `user_id` is set, because: (1) external teammates have no user record to pull a name from, (2) serves as a cache so the project page doesn't need to JOIN `users` just for names. Maps to `TeamMember.name`. |

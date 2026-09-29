@@ -1,76 +1,52 @@
 # gradfolio-sql
 
-MySQL 8.4 database schema for the Gradfolio Student Portfolio System.
+Reference documentation for the Gradfolio database (MySQL 8.4): per-table docs, the
+ERD, example queries and a browsable sample database.
+
+> **The schema is owned by [gradfolio-api](https://github.com/Levon0Asatryan/gradfolio-api).**
+> Its migrations in `src/core/db/migrations` are the source of truth, and
+> `npm run migrate` there creates or upgrades a database (local or Aiven). The decision
+> and its evidence are in gradfolio-api's `docs/m1-plan.md` (Q2).
+>
+> `sql/schema.sql` here is **frozen**: it is gradfolio-api's baseline migration
+> (`0001_baseline`), proved identical by a test there. Later schema changes (CHECK
+> constraints, tag tables, GitHub import columns) exist only as gradfolio-api
+> migrations. Do not edit the schema here.
 
 ---
 
-## Setup
+## Browse the baseline locally
 
-### Option A: Aiven (Production — Free Tier)
-
-The database is hosted on [Aiven](https://aiven.io/free-mysql-database) (free MySQL 8, 1 GB storage, no expiration).
-
-1. Sign up at [aiven.io](https://aiven.io) (no credit card needed)
-2. Create a MySQL service → copy connection details (host, port, user, password)
-3. Connect via DataGrip, CLI, or any MySQL client (SSL required)
-4. Run `sql/schema.sql` to create tables (remove the `CREATE DATABASE` and `USE` lines — Aiven provides `defaultdb`)
-5. Run `sql/seed.sql` to populate test data
+Requires Docker.
 
 ```bash
-# CLI example
-mysql -h <host> -P <port> -u avnadmin -p --ssl-mode=REQUIRED defaultdb < sql/schema.sql
-mysql -h <host> -P <port> -u avnadmin -p --ssl-mode=REQUIRED defaultdb < sql/seed.sql
-```
-
-### Option B: Local Docker (Development)
-
-Requires [Docker](https://www.docker.com/products/docker-desktop) and Docker Compose.
-
-```bash
-cd gradfolio-sql
 cp .env.example .env        # edit credentials if needed
-docker compose up -d        # starts MySQL + Adminer
+docker compose up -d        # MySQL + Adminer; loads schema.sql, then seed.sql, on first boot
+docker compose ps           # gradfolio-mysql: healthy, gradfolio-adminer: running
 ```
 
 | Container           | What it does                         | Default port |
 |---------------------|--------------------------------------|--------------|
-| `gradfolio-mysql`   | MySQL 8.4 database server            | `3306`       |
-| `gradfolio-adminer` | Web UI to browse/manage the database | `8080`       |
+| `gradfolio-mysql`   | MySQL 8.4 with the baseline + seed   | `3306`       |
+| `gradfolio-adminer` | Web UI to browse the database        | `8080`       |
 
-On first boot, Docker runs `sql/schema.sql` automatically.
+Adminer: open `http://localhost:8080` and log in with `mysql` / `gradfolio` / `gradfolio_pass` / `gradfolio`.
 
-To load seed data:
+Start again from scratch with `docker compose down -v && docker compose up -d`.
 
-```bash
-docker exec -i gradfolio-mysql mysql -u gradfolio -pgradfolio_pass gradfolio < sql/seed.sql
-```
-
-Verify: `docker compose ps` — both containers should be `healthy` / `running`.
-
-Adminer UI: open `http://localhost:8080` and log in with `mysql` / `gradfolio` / `gradfolio_pass` / `gradfolio`.
+For development against the real, current schema, use gradfolio-api instead
+(`docker compose up -d --build` there runs its migrations).
 
 ---
 
-## Connecting from gradfolio (Next.js)
+## SQL files
 
-Add to `.env.local` in the `gradfolio` frontend project:
-
-```env
-# Local Docker
-DATABASE_URL=mysql://gradfolio:gradfolio_pass@localhost:3306/gradfolio
-
-# Aiven
-DATABASE_URL=mysql://avnadmin:<password>@<host>:<port>/defaultdb?ssl={"rejectUnauthorized":true}
-```
-
----
-
-## SQL Files
-
-| File | Purpose | When to run |
-|------|---------|-------------|
-| `sql/schema.sql` | Creates all 12 tables, indexes, and constraints | Once, on fresh database |
-| `sql/seed.sql` | Inserts test data (3 users, 4 projects, teams, activities) | After schema, for development/demo |
+| File | Purpose |
+|------|---------|
+| `sql/schema.sql` | The baseline schema: 11 tables, indexes, constraints. Frozen. |
+| `sql/seed.sql` | Sample data for browsing (3 users, 4 projects, teams, activities, notifications) |
+| `sql/queries.sql` | **Illustrative only.** Examples of the queries the API needs, with their ownership and visibility rules. The API's real queries live in gradfolio-api. |
+| `sql/drop.sql` | Drops every table |
 
 ### Seed data overview
 
@@ -78,14 +54,16 @@ DATABASE_URL=mysql://avnadmin:<password>@<host>:<port>/defaultdb?ssl={"rejectUna
 - **3 education** entries, **3 experience** entries, **3 certifications**
 - **13 skills** across all users
 - **4 projects**: Gradfolio (capstone), Weather Dashboard, EduConnect, Wine Quality Predictor
-- **5 attachments**, **5 team members** (incl. 1 external without account)
+- **5 attachments**, **3 team members** (incl. 1 external without an account)
 - **3 integrations**, **5 activities**, **3 notifications**
 
-All IDs are auto-generated UUIDs via `@variable` chaining — seed uses `SET @user1 = UUID()` then references `@user1` in child tables.
+The seed generates ids with `SET @user1 = UUID()` and passes them explicitly, the way
+the application must. **A project's owner is never a team-member row**: the owner is
+`projects.user_id`. Notification links are built from the real project ids.
 
 ---
 
-## Schema Overview (12 tables)
+## Schema overview (11 tables, at the baseline)
 
 ```
 users                          Core user accounts and profile data (18 cols)
@@ -93,10 +71,10 @@ users                          Core user accounts and profile data (18 cols)
 ├── experience                 Work/internship experience entries (10 cols)
 ├── certifications             Professional certifications (7 cols)
 ├── user_skills                Skill tags (4 cols)
-├── projects                   Full project entries with metadata and repo info (24 cols)
+├── projects                   Full project entries with metadata and repo info (25 cols)
 │   ├── project_attachments    Media attachments: images, videos, PDFs, links (7 cols)
 │   └── project_team_members   Team collaborators with invitation status (9 cols)
-├── integrations               LinkedIn/GitHub OAuth connections (10 cols)
+├── integrations               LinkedIn/GitHub OAuth connections (11 cols)
 ├── activities                 Activity feed timeline events (7 cols)
 └── notifications              User notifications: team invites, verifications (10 cols)
 ```
@@ -105,7 +83,7 @@ users                          Core user accounts and profile data (18 cols)
 
 ```
 users
-│  id PK (CHAR(36), auto-generated UUID)
+│  id PK (CHAR(36) UUID, supplied by the application)
 │  auth0_id UNIQUE
 │
 ├─── education              (user_id → users.id CASCADE)
@@ -128,7 +106,7 @@ Exception: `project_team_members.user_id` uses `ON DELETE SET NULL` — if a use
 
 ## Key Conventions
 
-- **Primary keys**: `CHAR(36) DEFAULT (UUID())` — always auto-generated, never provided in INSERT
+- **Primary keys**: `CHAR(36) DEFAULT (UUID())`, but the application supplies every id: an INSERT that relies on the default leaves `LAST_INSERT_ID()` at 0, so the new id cannot be read back
 - **Foreign keys**: `CHAR(36)` matching parent PK, named `{entity}_id`
 - **Column names**: `snake_case` (transformed to `camelCase` at the API layer)
 - **Booleans**: `TINYINT(1)` — `0` = false, `1` = true
@@ -161,29 +139,3 @@ See `docs/` for detailed per-table documentation (every column: type, purpose, r
 - [01-users.md](docs/01-users.md) — [02-education.md](docs/02-education.md) — [03-experience.md](docs/03-experience.md) — [04-certifications.md](docs/04-certifications.md)
 - [05-user-skills.md](docs/05-user-skills.md) — [06-projects.md](docs/06-projects.md) — [07-project-attachments.md](docs/07-project-attachments.md) — [08-project-team-members.md](docs/08-project-team-members.md)
 - [09-integrations.md](docs/09-integrations.md) — [10-activities.md](docs/10-activities.md) — [11-notifications.md](docs/11-notifications.md)
-
----
-
-## Re-creating from scratch
-
-### Aiven
-
-Drop all tables in DataGrip (or delete and recreate the service), then re-run `schema.sql` + `seed.sql`.
-
-### Docker
-
-```bash
-docker compose down -v    # stop containers and delete data volume
-docker compose up -d      # fresh start — schema.sql runs automatically
-# Then load seed:
-docker exec -i gradfolio-mysql mysql -u gradfolio -pgradfolio_pass gradfolio < sql/seed.sql
-```
-
----
-
-## Teardown
-
-```bash
-docker compose down       # stop containers, keep data
-docker compose down -v    # stop containers and delete all data
-```
