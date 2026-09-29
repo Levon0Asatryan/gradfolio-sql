@@ -229,7 +229,10 @@ WHERE user_id = @viewer AND is_read = 0;
 INSERT INTO project_team_members (id, project_id, user_id, name, role, avatar_url, status)
 SELECT @new_id, p.id, @teammate_uid, @name, @role, @avatar, 'pending'
 FROM projects p
-WHERE p.id = @pid AND p.user_id = @viewer AND @teammate_uid <> @viewer;
+WHERE p.id = @pid AND p.user_id = @viewer
+  -- NULL is an external teammate (no account); NULL <> @viewer would be
+  -- unknown and silently insert nothing.
+  AND (@teammate_uid IS NULL OR @teammate_uid <> @viewer);
 
 -- 8b. Accept invitation -- the invitee only, and only while pending
 UPDATE project_team_members SET status = 'accepted'
