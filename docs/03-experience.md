@@ -18,7 +18,7 @@ Stores work experience entries for each user — internships, part-time jobs, re
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `Experience.id`. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. UUID. **The application supplies it on every insert**: the column has `DEFAULT (UUID())`, but an INSERT that relies on it leaves `LAST_INSERT_ID()` at 0, so the new row's id cannot be read back. CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `Experience.id`. |
 | `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. CASCADE on delete. |
 | `title` | `VARCHAR(500)` | NO | — | Job title (e.g., "Software Engineering Intern", "Research Assistant"). Maps to `Experience.title`. |
 | `organization` | `VARCHAR(500)` | NO | — | Company or institution name (e.g., "Google", "MIT AI Lab"). Maps to `Experience.organization`. |

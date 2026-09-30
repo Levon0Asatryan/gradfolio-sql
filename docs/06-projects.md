@@ -23,7 +23,7 @@ This table maps to **three** different TypeScript types depending on context:
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Used as route parameter in `/projects/{id}`. Maps to `ProjectDetailData.id`. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. UUID. **The application supplies it on every insert**: the column has `DEFAULT (UUID())`, but an INSERT that relies on it leaves `LAST_INSERT_ID()` at 0, so the new row's id cannot be read back. CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Used as route parameter in `/projects/{id}`. Maps to `ProjectDetailData.id`. |
 | `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. The project owner/creator. CASCADE on delete. |
 | `title` | `VARCHAR(500)` | NO | — | Project name (e.g., "Smart Garden IoT System"). 500 chars covers descriptive titles. Maps to `ProjectDetailData.title` and profile `Project.name`. |
 | `summary` | `TEXT` | YES | `NULL` | Short text summary of the project. Used on profile cards and search results. Maps to profile `Project.summary` and dashboard `Project.description`. NULL when not provided. |
@@ -78,7 +78,7 @@ This table maps to **three** different TypeScript types depending on context:
   "tags": ["iot", "hardware", "mobile-app"],
   "technologies": ["Arduino", "Raspberry Pi", "React Native", "Firebase"],
   "links": [{"label": "Demo Video", "url": "https://youtube.com/watch?v=abc"}],
-  "files": [{"label": "Project Report", "url": "/uploads/report.pdf"}],
+  "files": [{"label": "Project Report", "url": "https://files.example.com/report.pdf"}],
   "repo_url": "https://github.com/gabenuels/smart-garden",
   "repo_latest_commit": "2024-11-15",
   "repo_readme_url": "https://github.com/gabenuels/smart-garden/blob/main/README.md",

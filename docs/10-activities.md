@@ -18,7 +18,7 @@ Stores activity feed events for each user — a timeline of actions like "Update
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `Activity.id`. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. UUID. **The application supplies it on every insert**: the column has `DEFAULT (UUID())`, but an INSERT that relies on it leaves `LAST_INSERT_ID()` at 0, so the new row's id cannot be read back. CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `Activity.id`. |
 | `user_id` | `CHAR(36)` | NO | — | FK to `users.id`. Whose activity feed this event belongs to. CASCADE on delete. |
 | `type` | `ENUM(...)` | NO | — | Activity category. Values: `project` (project-related action), `profile` (profile-related action). Used to display different icons and colors in the activity feed. Maps to `Activity.type`. |
 | `translation_key` | `VARCHAR(255)` | NO | — | i18n translation key for the activity message (e.g., `"projectUpdated"`, `"profileViewed"`, `"newSkill"`). The frontend looks this up in the translation dictionary to render the message in the user's language. `VARCHAR(255)` is plenty for dot-notation keys. Maps to `Activity.translationKey` (snake_case → camelCase transform in API). |

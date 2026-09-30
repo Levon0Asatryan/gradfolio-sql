@@ -12,7 +12,12 @@ services:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./sql:/docker-entrypoint-initdb.d:ro
+      # Only the schema and the seed, in that order. Mounting all of sql/ ran
+      # its files alphabetically -- drop.sql, then queries.sql against tables
+      # that did not exist yet (ERROR 1146) -- and the container restarted in
+      # a loop on every fresh volume.
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./sql/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     healthcheck:
       test:
         [

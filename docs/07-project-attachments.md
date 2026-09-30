@@ -19,10 +19,10 @@ Stores media attachments for projects — images, videos, PDFs, and external lin
 
 | Column | Type | Nullable | Default | Description |
 | --- | --- | --- | --- | --- |
-| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. Auto-generated UUID. Inserts must omit this column — MySQL generates it automatically via DEFAULT (UUID()). CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `ProjectAttachment.id`. |
+| `id` | `CHAR(36)` | NO | `UUID()` | Primary key. UUID. **The application supplies it on every insert**: the column has `DEFAULT (UUID())`, but an INSERT that relies on it leaves `LAST_INSERT_ID()` at 0, so the new row's id cannot be read back. CHAR(36) is fixed-length, more efficient than VARCHAR for always-36-char UUIDs. Maps to `ProjectAttachment.id`. |
 | `project_id` | `CHAR(36)` | NO | — | FK to `projects.id`. CASCADE on delete. |
 | `type` | `ENUM(...)` | NO | — | Attachment type. Values: `image`, `video`, `pdf`, `link`. Determines how the frontend renders it: images get lightbox preview, videos get YouTube embed detection, PDFs get download link, links get external navigation. Maps to `ProjectAttachment.type`. |
-| `url` | `TEXT` | NO | — | URL to the resource. Can be an uploaded file path (`/uploads/screenshot.png`), external URL (`https://youtube.com/watch?v=...`), or CDN link. `TEXT` because URLs vary in length. Maps to `ProjectAttachment.url`. |
+| `url` | `TEXT` | NO | — | URL to the resource. Must be an absolute `http`/`https` URL: an uploaded file's storage URL, an external URL (`https://youtube.com/watch?v=...`), or CDN link. `TEXT` because URLs vary in length. Maps to `ProjectAttachment.url`. |
 | `title` | `VARCHAR(500)` | YES | `NULL` | Display title for the attachment (e.g., "App Screenshot", "Demo Video", "Final Report"). Shown as label in the gallery. Maps to `ProjectAttachment.title?`. |
 | `thumbnail_url` | `TEXT` | YES | `NULL` | URL to a thumbnail image. For images, this may be a resized version; for videos, a preview frame. Falls back to `url` for images if not set. Maps to `ProjectAttachment.thumbnailUrl?`. |
 | `sort_order` | `INT` | NO | `0` | Display order in the attachments gallery. |
@@ -60,7 +60,7 @@ Stores media attachments for projects — images, videos, PDFs, and external lin
     "id": "f6a8b0c2-5d7e-4f9a-b1c3-d4e5f6a7b8cb",
     "project_id": "a1b2c3d4-e5f6-4a7b-8c9d-ef0123456789",
     "type": "pdf",
-    "url": "/uploads/a1b2c3d4/final-report.pdf",
+    "url": "https://files.example.com/a1b2c3d4/final-report.pdf",
     "title": "Final Report",
     "thumbnail_url": null,
     "sort_order": 2
