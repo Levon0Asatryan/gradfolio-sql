@@ -9,7 +9,7 @@ schema in this repository: write a migration in gradfolio-api.
 
 ## Overview
 
-- **Database**: MySQL 8.4 (hosted on Aiven free tier)
+- **Database**: MySQL 8.4 (production: Cloud SQL on Google Cloud; see gradfolio-api `docs/deploy.md`)
 - **Tables**: 11 (at the baseline)
 - **Schema file**: `sql/schema.sql`
 - **Seed data**: `sql/seed.sql`
@@ -39,7 +39,7 @@ users                          Core user accounts and profile data (18 columns)
 - **Booleans**: `TINYINT(1)` — `0` = false, `1` = true
 - **Ordering**: `sort_order INT DEFAULT 0` on ordered child tables
 - **Cascades**: All FKs use `ON DELETE CASCADE` except `project_team_members.user_id` which uses `ON DELETE SET NULL`
-- **TEXT columns cannot have DEFAULT values** (MySQL strict mode on Aiven) — use `NULL` instead
+- **TEXT columns cannot have DEFAULT values** (MySQL strict mode, also on Cloud SQL) — use `NULL` instead
 
 ## Frontend Type Mapping
 
@@ -71,7 +71,7 @@ docker compose up -d          # Start MySQL + Adminer
 docker compose down           # Stop containers
 docker compose down -v        # Stop and delete all data
 
-# A real database (local or Aiven) is created by gradfolio-api:
+# A real database (local or Cloud SQL) is created by gradfolio-api:
 #   npm run migrate    (then npm run db:seed for demo data)
 ```
 

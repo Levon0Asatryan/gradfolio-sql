@@ -5,7 +5,8 @@ ERD, example queries and a browsable sample database.
 
 > **The schema is owned by [gradfolio-api](https://github.com/Levon0Asatryan/gradfolio-api).**
 > Its migrations in `src/core/db/migrations` are the source of truth, and
-> `npm run migrate` there creates or upgrades a database (local or Aiven). The decision
+> `npm run migrate` there creates or upgrades a local database. Production is Cloud SQL (MySQL 8.4) on Google Cloud, migrated by a
+> Cloud Run job from gradfolio-api's pipeline (`docs/deploy.md` there); the old Aiven database is gone. The decision
 > and its evidence are in gradfolio-api's `docs/m1-plan.md` (Q2).
 >
 > `sql/schema.sql` here is **frozen**: it is gradfolio-api's baseline migration
@@ -110,7 +111,7 @@ Exception: `project_team_members.user_id` uses `ON DELETE SET NULL` — if a use
 - **Foreign keys**: `CHAR(36)` matching parent PK, named `{entity}_id`
 - **Column names**: `snake_case` (transformed to `camelCase` at the API layer)
 - **Booleans**: `TINYINT(1)` — `0` = false, `1` = true
-- **TEXT columns**: use `NULL`, not `DEFAULT ''` (MySQL strict mode on Aiven disallows TEXT defaults)
+- **TEXT columns**: use `NULL`, not `DEFAULT ''` (MySQL strict mode, the default on Cloud SQL as well, disallows TEXT defaults)
 - **Ordering**: `sort_order INT DEFAULT 0` on ordered child tables
 
 ## Table → TypeScript Type Mapping
